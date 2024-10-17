@@ -261,7 +261,7 @@ class InfoPublisher(Node):
         # self.ee_pose_pub = self.create_publisher(PoseOrientation, 'ee_pose_orientation', 10)
         # self.object_pose_pub = self.create_publisher(PoseOrientation, 'object_pose_orientation', 10)
         
-        self.timer = self.create_timer(0.1, self.publish_info)  # Timer for periodic publishing
+        self.timer = self.create_timer(0.01, self.publish_info)  # Timer for periodic publishing
         
         # Initialize gym environment
         env_cfg: LiftEnvCfg = parse_env_cfg(
@@ -287,42 +287,43 @@ class InfoPublisher(Node):
         self.i += 1
 
         self.test_publisher.publish(msg)
-        dones = self.env.step(self.actions)[-2]
+        with torch.inference_mode():
+            dones = self.env.step(self.actions)[-2]
 
-        # Observations
-        ee_frame_sensor = self.env.unwrapped.scene["ee_frame"]
-        tcp_rest_position = ee_frame_sensor.data.target_pos_w[..., 0, :].clone() - self.env.unwrapped.scene.env_origins
-        tcp_rest_orientation = ee_frame_sensor.data.target_quat_w[..., 0, :].clone()
+            # Observations
+            ee_frame_sensor = self.env.unwrapped.scene["ee_frame"]
+            tcp_rest_position = ee_frame_sensor.data.target_pos_w[..., 0, :].clone() - self.env.unwrapped.scene.env_origins
+            tcp_rest_orientation = ee_frame_sensor.data.target_quat_w[..., 0, :].clone()
 
-        object_data: RigidObjectData = self.env.unwrapped.scene["object"].data
-        object_position = object_data.root_pos_w - self.env.unwrapped.scene.env_origins
-        desired_position = self.env.unwrapped.command_manager.get_command("object_pose")[..., :3]
+            object_data: RigidObjectData = self.env.unwrapped.scene["object"].data
+            object_position = object_data.root_pos_w - self.env.unwrapped.scene.env_origins
+            desired_position = self.env.unwrapped.command_manager.get_command("object_pose")[..., :3]
 
-        # Compute actions using the state machine
-        self.actions = self.pick_sm.compute(
-            torch.cat([tcp_rest_position, tcp_rest_orientation], dim=-1),
-            torch.cat([object_position, self.desired_orientation], dim=-1),
-            torch.cat([desired_position, self.desired_orientation], dim=-1),
-        )
+            # Compute actions using the state machine
+            self.actions = self.pick_sm.compute(
+                torch.cat([tcp_rest_position, tcp_rest_orientation], dim=-1),
+                torch.cat([object_position, self.desired_orientation], dim=-1),
+                torch.cat([desired_position, self.desired_orientation], dim=-1),
+            )
 
-        # Create messages and publish
-        # action_msg = Actions()
-        # action_msg.data = self.actions.tolist()
-        # self.action_pub.publish(action_msg)
+            # Create messages and publish
+            # action_msg = Actions()
+            # action_msg.data = self.actions.tolist()
+            # self.action_pub.publish(action_msg)
 
-        # ee_pose_msg = PoseOrientation()
-        # ee_pose_msg.position = tcp_rest_position.tolist()
-        # ee_pose_msg.orientation = tcp_rest_orientation.tolist()
-        # self.ee_pose_pub.publish(ee_pose_msg)
+            # ee_pose_msg = PoseOrientation()
+            # ee_pose_msg.position = tcp_rest_position.tolist()
+            # ee_pose_msg.orientation = tcp_rest_orientation.tolist()
+            # self.ee_pose_pub.publish(ee_pose_msg)
 
-        # object_pose_msg = PoseOrientation()
-        # object_pose_msg.position = object_position.tolist()
-        # object_pose_msg.orientation = self.desired_orientation.tolist()
-        # self.object_pose_pub.publish(object_pose_msg)
+            # object_pose_msg = PoseOrientation()
+            # object_pose_msg.position = object_position.tolist()
+            # object_pose_msg.orientation = self.desired_orientation.tolist()
+            # self.object_pose_pub.publish(object_pose_msg)
 
-        # Reset state machine if necessary
-        if dones.any():
-            self.pick_sm.reset_idx(dones.nonzero(as_tuple=False).squeeze(-1))
+            # Reset state machine if necessary
+            if dones.any():
+                self.pick_sm.reset_idx(dones.nonzero(as_tuple=False).squeeze(-1))
 
 def main(args=None):
     rclpy.init(args=args)
