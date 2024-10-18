@@ -23,7 +23,8 @@ rclpy needs to be here
 """
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import String
+from std_msgs.msg import String, Float64MultiArray
+from geometry_msgs.msg import Pose, Point, Quaternion, Twist
 
 # TODO: Implement custom messages that can work with Isaac Lab
 # custom messages with ROS2
@@ -258,8 +259,9 @@ class InfoPublisher(Node):
         
         # # Create publishers
         # self.action_pub = self.create_publisher(Actions, 'actions', 10)
-        # self.ee_pose_pub = self.create_publisher(PoseOrientation, 'ee_pose_orientation', 10)
-        # self.object_pose_pub = self.create_publisher(PoseOrientation, 'object_pose_orientation', 10)
+        self.ee_pose_pub = self.create_publisher(Pose, 'ee_pose_orientation', 10)
+        self.object_pose_pub = self.create_publisher(Pose, 'object_pose_orientation', 10)
+        self.action_pub = self.create_publisher(Float64MultiArray, 'action', 10)
         
         self.timer = self.create_timer(0.01, self.publish_info)  # Timer for periodic publishing
         
@@ -287,6 +289,7 @@ class InfoPublisher(Node):
         self.i += 1
 
         self.test_publisher.publish(msg)
+        
         with torch.inference_mode():
             dones = self.env.step(self.actions)[-2]
 
@@ -306,20 +309,33 @@ class InfoPublisher(Node):
                 torch.cat([desired_position, self.desired_orientation], dim=-1),
             )
 
-            # Create messages and publish
-            # action_msg = Actions()
-            # action_msg.data = self.actions.tolist()
-            # self.action_pub.publish(action_msg)
+            print(object_position)
+            print(tcp_rest_orientation)
+            print(type(tcp_rest_orientation))
+            # Publish the end-effector pose
+            ee_pose_msg = Pose()
+            ee_pose_msgList = tcp_rest_position.tolist()
+            ee_pose_msg.position.x = ee_pose_msgList[0][0]
+            ee_pose_msg.position.y = ee_pose_msgList[0][1]
+            ee_pose_msg.position.z = ee_pose_msgList[0][2]
 
-            # ee_pose_msg = PoseOrientation()
-            # ee_pose_msg.position = tcp_rest_position.tolist()
-            # ee_pose_msg.orientation = tcp_rest_orientation.tolist()
-            # self.ee_pose_pub.publish(ee_pose_msg)
 
-            # object_pose_msg = PoseOrientation()
-            # object_pose_msg.position = object_position.tolist()
-            # object_pose_msg.orientation = self.desired_orientation.tolist()
-            # self.object_pose_pub.publish(object_pose_msg)
+            ee_orientation_msgList = tcp_rest_orientation.tolist()
+
+            ee_pose_msg.orientation.x = ee_orientation_msgList[0][0]
+            ee_pose_msg.orientation.y = ee_orientation_msgList[0][1]
+            ee_pose_msg.orientation.z = ee_orientation_msgList[0][2]
+            ee_pose_msg.orientation.w = ee_orientation_msgList[0][3]
+
+            self.ee_pose_pub.publish(ee_pose_msg)
+
+
+            # print(self.actions)
+
+            action_list = self.actions.tolist()
+            action_msg = Float64MultiArray()  # Correct instantiation
+            action_msg.data = action_list[0]  # Set the data field
+            self.action_pub.publish(action_msg)  # Publish the message
 
             # Reset state machine if necessary
             if dones.any():
