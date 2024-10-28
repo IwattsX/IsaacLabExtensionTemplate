@@ -24,7 +24,8 @@ rclpy needs to be here
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String, Float64MultiArray
-from geometry_msgs.msg import Pose, Point, Quaternion, Twist
+from geometry_msgs.msg import Pose
+from sensor_msgs.msg import JointState
 
 # TODO: Implement custom messages that can work with Isaac Lab
 # custom messages with ROS2
@@ -261,9 +262,9 @@ class InfoPublisher(Node):
         # self.action_pub = self.create_publisher(Actions, 'actions', 10)
         self.ee_pose_pub = self.create_publisher(Pose, 'ee_pose_orientation', 10)
         self.object_pose_pub = self.create_publisher(Pose, 'object_pose_orientation', 10)
-        self.action_pub = self.create_publisher(Float64MultiArray, 'action', 10)
+        self.action_pub = self.create_publisher(JointState, 'action', 10)
         
-        self.timer = self.create_timer(0.01, self.publish_info)  # Timer for periodic publishing
+        self.timer = self.create_timer(0.1, self.publish_info)  # Timer for periodic publishing
         
         # Initialize gym environment
         env_cfg: LiftEnvCfg = parse_env_cfg(
@@ -297,11 +298,15 @@ class InfoPublisher(Node):
             ee_frame_sensor = self.env.unwrapped.scene["ee_frame"]
             tcp_rest_position = ee_frame_sensor.data.target_pos_w[..., 0, :].clone() - self.env.unwrapped.scene.env_origins
             tcp_rest_orientation = ee_frame_sensor.data.target_quat_w[..., 0, :].clone()
+            
+            
 
             object_data: RigidObjectData = self.env.unwrapped.scene["object"].data
             object_position = object_data.root_pos_w - self.env.unwrapped.scene.env_origins
             desired_position = self.env.unwrapped.command_manager.get_command("object_pose")[..., :3]
-
+            print("This is the object data")
+            print(object_data.__dict__)
+            print("---------")
             # Compute actions using the state machine
             self.actions = self.pick_sm.compute(
                 torch.cat([tcp_rest_position, tcp_rest_orientation], dim=-1),
@@ -329,12 +334,13 @@ class InfoPublisher(Node):
 
             self.ee_pose_pub.publish(ee_pose_msg)
 
-
-            # print(self.actions)
+            print("THESE ARE THE ACTIONS")
+            print(self.actions)
 
             action_list = self.actions.tolist()
-            action_msg = Float64MultiArray()  # Correct instantiation
-            action_msg.data = action_list[0]  # Set the data field
+            action_msg = JointState()  # Correct instantiation
+            action_msg.header.frame_id = '0'
+            action_msg.position = action_list[0]  # Set the data field
             self.action_pub.publish(action_msg)  # Publish the message
 
             # Reset state machine if necessary
