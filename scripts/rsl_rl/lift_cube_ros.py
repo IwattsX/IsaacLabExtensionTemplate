@@ -26,6 +26,7 @@ from rclpy.node import Node
 from std_msgs.msg import String, Float64MultiArray
 from geometry_msgs.msg import Pose
 from sensor_msgs.msg import JointState
+from pprint import pprint
 
 # TODO: Implement custom messages that can work with Isaac Lab
 # custom messages with ROS2
@@ -262,7 +263,7 @@ class InfoPublisher(Node):
         # self.action_pub = self.create_publisher(Actions, 'actions', 10)
         self.ee_pose_pub = self.create_publisher(Pose, 'ee_pose_orientation', 10)
         self.object_pose_pub = self.create_publisher(Pose, 'object_pose_orientation', 10)
-        self.action_pub = self.create_publisher(JointState, 'action', 10)
+        self.action_pub = self.create_publisher(JointState, 'joint_states', 10)
         
         self.timer = self.create_timer(0.1, self.publish_info)  # Timer for periodic publishing
         
@@ -299,14 +300,14 @@ class InfoPublisher(Node):
             tcp_rest_position = ee_frame_sensor.data.target_pos_w[..., 0, :].clone() - self.env.unwrapped.scene.env_origins
             tcp_rest_orientation = ee_frame_sensor.data.target_quat_w[..., 0, :].clone()
             
-            
-
+            # print("UNWRAPPED SCENE OBJECT DATA DICT")
+            # pprint(self.env.unwrapped.scene["object"].__dict__)
+            # print("This is the unwrapped scene object")
+            # pprint(self.env.unwrapped.scene["object"])
+ 
             object_data: RigidObjectData = self.env.unwrapped.scene["object"].data
             object_position = object_data.root_pos_w - self.env.unwrapped.scene.env_origins
             desired_position = self.env.unwrapped.command_manager.get_command("object_pose")[..., :3]
-            print("This is the object data")
-            print(object_data.__dict__)
-            print("---------")
             # Compute actions using the state machine
             self.actions = self.pick_sm.compute(
                 torch.cat([tcp_rest_position, tcp_rest_orientation], dim=-1),
@@ -314,9 +315,9 @@ class InfoPublisher(Node):
                 torch.cat([desired_position, self.desired_orientation], dim=-1),
             )
 
-            print(object_position)
-            print(tcp_rest_orientation)
-            print(type(tcp_rest_orientation))
+            # print(object_position)
+            # print(tcp_rest_orientation)
+            # print(type(tcp_rest_orientation))
             # Publish the end-effector pose
             ee_pose_msg = Pose()
             ee_pose_msgList = tcp_rest_position.tolist()
@@ -334,12 +335,18 @@ class InfoPublisher(Node):
 
             self.ee_pose_pub.publish(ee_pose_msg)
 
-            print("THESE ARE THE ACTIONS")
-            print(self.actions)
+            # print("THESE ARE THE ACTIONS")
+            # print(self.actions)
 
             action_list = self.actions.tolist()
+
             action_msg = JointState()  # Correct instantiation
-            action_msg.header.frame_id = '0'
+            action_msg.header.frame_id = ''
+            action_msg.header.stamp = self.get_clock().now().to_msg()
+            nameArr = [f"panda_joint{i}" for i in range(1, 8)]
+            nameArr.append("panda_finger_joint1")
+            action_msg.name = nameArr
+
             action_msg.position = action_list[0]  # Set the data field
             self.action_pub.publish(action_msg)  # Publish the message
 
