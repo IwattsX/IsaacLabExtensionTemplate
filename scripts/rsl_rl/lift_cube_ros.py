@@ -346,8 +346,12 @@ class InfoPublisher(Node):
             nameArr = [f"panda_joint{i}" for i in range(1, 8)]
             nameArr.append("panda_finger_joint1")
             action_msg.name = nameArr
+            
+            # Reformat for use in RVIZ
 
             action_msg.position = action_list[0]  # Set the data field
+            
+            
             self.action_pub.publish(action_msg)  # Publish the message
 
             # Reset state machine if necessary
