@@ -202,6 +202,20 @@ class JointStatePublisher(Node):
         # update marker positions
         self.ee_marker.visualize(ee_pose_w[:, 0:3], ee_pose_w[:, 3:7])
         self.goal_marker.visualize(self.ik_commands[:, 0:3] + self.scene.env_origins, self.ik_commands[:, 3:7])
+        
+        action_msg = JointState()
+        action_msg.header.frame_id = ''
+        action_msg.header.stamp = self.get_clock().now().to_msg()
+        action_msg.name = [f"panda_joint{i}" for i in self.robot_entity_cfg.joint_ids]
+        action_msg.position = joint_pos.tolist()[0]
+        print("JOINT POS")
+        print(joint_pos)
+        print(type(joint_pos))
+        print()
+
+        self.action_pub.publish(action_msg)
+
+        
 
 
 def main(args=None):
