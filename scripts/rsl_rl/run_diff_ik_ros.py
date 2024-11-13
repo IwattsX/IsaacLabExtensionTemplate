@@ -206,12 +206,15 @@ class JointStatePublisher(Node):
         action_msg = JointState()
         action_msg.header.frame_id = ''
         action_msg.header.stamp = self.get_clock().now().to_msg()
-        action_msg.name = [f"panda_joint{i}" for i in self.robot_entity_cfg.joint_ids]
+        action_msg.name = [f"panda_joint{i+1}" for i in self.robot_entity_cfg.joint_ids]
         action_msg.position = joint_pos.tolist()[0]
-        print("JOINT POS")
-        print(joint_pos)
-        print(type(joint_pos))
+        action_msg.effort = ee_pose_w.tolist()[0]
+        print(f"Efort_pose w: {ee_pose_w}")
         print()
+        # print("JOINT POS")
+        # print(joint_pos)
+        # print(type(joint_pos))
+        # print()
 
         self.action_pub.publish(action_msg)
 
