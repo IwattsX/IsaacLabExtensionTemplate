@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="rrr_arm">
+    <xacro:arg name="initial_positions_file" default="initial_positions.yaml" />
+
+    <!-- Import rrr_arm urdf file -->
+    <xacro:include filename="$(find moveit_resources_panda_description)/urdf/rrr_arm_full (1).urdf" />
+
+    <!-- Import control_xacro -->
+    <xacro:include filename="rrr_arm.ros2_control.xacro" />
+
+
+    <xacro:rrr_arm_ros2_control name="FakeSystem" initial_positions_file="$(arg initial_positions_file)"/>
+
+</robot>
