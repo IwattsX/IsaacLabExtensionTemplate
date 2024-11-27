@@ -1,0 +1,9 @@
+# Default initial positions for rrr_arm's ros2_control fake system
+
+initial_positions:
+  gripper_joint_1: 0
+  gripper_joint_2: 0
+  joint_1: 0
+  joint_2: 0
+  joint_3: 0
+  joint_4: 0
