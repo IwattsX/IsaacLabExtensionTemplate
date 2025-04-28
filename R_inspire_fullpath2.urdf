@@ -198,7 +198,7 @@
     type="revolute">
     <origin
       xyz="-0.0088099 0.010892 -0.00925"
-      rpy="1.5708 0 2.8587" />
+      rpy="0.0 ${pi} 0.0" />
     <parent
       link="R_thumb_proximal_base" />
     <child
@@ -438,7 +438,7 @@
     type="revolute">
     <origin
       xyz="-0.0088099 0.010892 -0.00925"
-      rpy="1.5708 0 2.8587" />
+      rpy="0 0 ${-pi}" />
     <parent
       link="R_index_proximal_base" />
     <child
