@@ -379,8 +379,8 @@
     name="R_index_proximal_yaw_joint"
     type="revolute">
     <origin
-      xyz="-0.01696 -0.0691 0.02045"
-      rpy="1.0 0.0 0.0" />
+      xyz="-0.01696 -0.0771 0.02045"
+      rpy="1.39 0.0006 0.024" />
     <parent
       link="R_hand_base_link" />
     <child
