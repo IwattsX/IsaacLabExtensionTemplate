@@ -339,7 +339,7 @@
     name="R_index_proximal_base">
     <inertial>
       <origin
-        xyz="-0.0048064 0.0009382 -0.00757"
+        xyz="-0.0278064 0.0009382 -0.00757"
         rpy="0 0 0" />
       <mass
         value="0.0018869" />
